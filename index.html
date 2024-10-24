@@ -1,0 +1,180 @@
+<!DOCTYPE HTML>
+    <head>
+        <title>Mevs Awesome String Scrambler</title>
+        <script>
+            function scramble(string, seed) {
+                const origArr = Array.from(string);
+                let newArr = [];
+                let newStr = "";
+
+                const origLen = origArr.length;
+                for (let i = 0; i < origLen; i++) {
+                    const length = origArr.length;
+                    const random = rand(seed, string.length + i) * 1000000;
+                    newArr.push([random, origArr[i]]);
+                }
+
+                newArr.sort((a, b) => {
+                    return a[0] - b[0];
+                })
+
+                for (const letter of newArr) {
+                    newStr += letter[1];
+                }
+
+                return newStr;
+            }
+
+            function unscramble (string, seed) {
+                const origArr = Array.from(string);
+                const randomArr = [];
+                const finalArr = [];
+                let newStr = "";
+
+                const origLen = origArr.length;
+                for (let i = 0; i < origLen; i++) {
+                    const length = origArr.length;
+                    const random = rand(seed, string.length + i) * 1000000;
+                    randomArr.push(random);
+                }
+
+                const sortedArr = Array.from(randomArr).sort((a, b) => {
+                    return a - b;
+                })
+
+                for (const number of sortedArr) {
+                    finalArr[randomArr.indexOf(number)] = origArr[sortedArr.indexOf(number)];
+                }
+
+                for (const letter of finalArr) {
+                    newStr += letter;
+                }
+
+                return newStr;
+            }
+
+            function rand(a, b) {
+	            let d = BigInt(Math.floor(a * 3987));
+	            const c = b ? BigInt(Math.floor(b * 5306)) : 87382915n;
+                d += (c);
+                d ^= (d >> 16n);
+                d *= (4123755803n + c);
+                d ^= (d >> 15n);
+                d *= 2221713035n;
+                d ^= (d >> 16n);
+	            d %= 4294967296n;
+                return Number(d) / 4294967296;
+            }
+
+            function swapScrambleButton(event) {
+                const button = event.target;
+                if (button.innerHTML === "scramble") {
+                    button.innerHTML = "unscramble";
+                } else {
+                    button.innerHTML = "scramble";
+                }
+
+                stringUpdate();
+            }
+
+            function randomizeSeed() {
+                const digitCount = Math.ceil(Math.random() * 8) + 2;
+                document.getElementById("seedInput").value = Math.ceil(Math.random() * (10 ** digitCount)) ;
+
+                stringUpdate();
+            }
+
+            function seedUpdate() {
+                stringUpdate();
+                //console.log(document.getElementById("seedInput").value.length);
+            }
+
+            function stringUpdate() {
+                const stringInput = document.getElementById("stringInput");
+                const stringOutput = document.getElementById("stringOutput");
+                const seedInput = document.getElementById("seedInput");
+
+                stringInput.style.height = "auto";
+                stringInput.style.height = `${stringInput.scrollHeight}px`;
+
+                if (!(seedInput.value.length > 0)) {
+                    stringOutput.value = "Input a seed first!"
+                } else if (document.getElementById("scramblerToggle").innerHTML === "scramble") {
+                    stringOutput.value = scramble(stringInput.value, seedInput.value);
+                } else {
+                    stringOutput.value = unscramble(stringInput.value, seedInput.value);
+                }
+            }
+
+            function init() {
+                document.getElementById("scramblerToggle").addEventListener("click", swapScrambleButton);
+                document.getElementById("stringInput").addEventListener("input", stringUpdate);
+                document.getElementById("seedInput").addEventListener("input", seedUpdate);
+                document.getElementById("randomizeSeed").addEventListener("click", randomizeSeed);
+
+                const stringInput = document.getElementById("stringInput");
+                stringInput.addEventListener("input", stringUpdate);
+                stringInput.dispatchEvent(new Event('input', {bubbles: true}));
+            }
+
+            window.addEventListener("DOMContentLoaded", init);
+        </script>
+        <style>
+            textarea {
+                height: auto; 
+                width: 40rem; 
+                resize: none; 
+                font-size: 2rem;
+                font-family: sans-serif;
+            }
+
+            .horiDiv {
+                width: fit-content;
+                display: flex; 
+                flex-direction: row;
+            }
+
+            .vertDiv {
+                display: flex; 
+                flex-direction: column;
+            }
+
+            label {
+                font-family: sans-serif;
+                font-size: 2rem;
+            }
+
+            hr {
+                border: 2px solid #005cb3;
+                border-radius: 5px;
+                width: 100%;;
+            }
+
+            button {
+                width: 9rem;
+                font-size: 1.5rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 id="asdffd" style="color: #005cb3">Mevs awesome string scrambler</h1>
+        <div class="vertDiv" style="gap: 1rem;">
+            <div class="horiDiv" style="gap: 1rem;">
+                <div class="horiDiv" style="gap: 0.2rem;">
+                    <label for="scramblerToggle">mode:</label>
+                    <button id="scramblerToggle" style="width: 9rem; font-size: 1.5rem;">scramble</button>
+                </div>
+                <div class="horiDiv" style="gap: 0.2rem;">
+                    <label for="seedInput">seed:</label>
+                    <input id="seedInput" style="font-size: 2rem;" type="number">
+                    <button id="randomizeSeed" style="width: 15rem;">randomize seed</button>
+                </div>
+            </div>
+            <hr>
+            <div class="horiDiv" style="gap: 1rem;">
+                <textarea id="stringInput" type="text"></textarea>
+                <p style="font-family: sans-serif; font-size: 5rem; color: #005cb3;">==></p>
+                <textarea id="stringOutput" type="text" disabled></textarea>
+            </div>
+        </div>
+    </body>
