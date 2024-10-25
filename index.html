@@ -1,6 +1,8 @@
 <!DOCTYPE HTML>
     <head>
         <title>Mevs Awesome String Scrambler</title>
+        <meta name="og:title" content="Mevs Awesome String Scrambler">
+        <meta name="og:description" content="a silly little tool that reversibly randomizes the position of characters in a string using a seed">
         <script>
             function scramble(string, seed) {
                 const origArr = Array.from(string);
@@ -148,18 +150,18 @@
                 const forceMobile = JSON.parse(localStorage.getItem("forceMobile"));
 
                 if (window.innerWidth > WIDTH_LIMIT) {
-                    document.body.innerHTML = desktopHtml;
+                    document.getElementById("content-destination").innerHTML = desktopHtml;
                     currentDocumentState = "desktop";
                 } else {
-                    document.body.innerHTML = mobileHtml;
+                    document.getElementById("content-destination").innerHTML = mobileHtml;
                     currentDocumentState = "mobile";
                 }
 
                 if (forceDesktop === true) {
-                    document.body.innerHTML = desktopHtml;
+                    document.getElementById("content-destination").innerHTML = desktopHtml;
                     currentDocumentState = "desktop";
                 } else if (forceMobile === true) {
-                    document.body.innerHTML = mobileHtml;
+                    document.getElementById("content-destination").innerHTML = mobileHtml;
                     currentDocumentState = "mobile";
                 }
 
@@ -174,6 +176,7 @@
                 stringOutput.value = outputText;
                 seedInput.value = seed;
                 scramblerToggle.setAttribute("scramble", mode);
+                scramblerToggle.innerHTML = mode
                 forceDesktopCheckbox.checked = forceDesktop;
                 forceMobileCheckbox.checked = forceMobile;
 
@@ -223,7 +226,7 @@
 
                 window.addEventListener("resize", isUpdateNeeded);
 
-                document.body.innerHTML = desktopHtml;
+                document.getElementById("content-destination").innerHTML = desktopHtml;
 
                 updateLayout();
             }
@@ -325,7 +328,6 @@
                 flex-direction: column;
                 align-items: center;
                 margin: auto;
-                width: auto;
                 gap: 1rem;
             }
 
@@ -355,4 +357,8 @@
         </style>
     </head>
     <body>
+        <div class="vertDiv">
+            <div id="topbar"></div>
+            <div id="content-destination" style="width: 100%;"></div>
+        </div>
     </body>
