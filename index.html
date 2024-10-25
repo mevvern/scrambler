@@ -208,7 +208,7 @@
                 const forceDesktop = JSON.parse(localStorage.getItem("forceDesktop"));
                 if (typeof forceDesktop !== "boolean") {
                     console.log("forceDesktop did not exist on startup!")
-                    localStorage.setItem("forceDesktop", "true");
+                    localStorage.setItem("forceDesktop", "false");
                 } else {
                     console.log("forceDesktop exists on startup! it was", forceDesktop);
                 }
