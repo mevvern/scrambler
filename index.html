@@ -2,6 +2,8 @@
     <head>
         <title>Mevs Awesome String Scrambler</title>
         <script>
+            const ASPECT_RATIO_LIMIT = 1.16;
+
             function scramble(string, seed) {
                 const origArr = Array.from(string);
                 let newArr = [];
@@ -66,11 +68,17 @@
                 return Number(d) / 4294967296;
             }
 
+            function getAspectRatio() {
+                return window.innerWidth / window.innerHeight;
+            }
+
             function swapScrambleButton(event) {
                 const button = event.target;
-                if (button.innerHTML === "scramble") {
+                if (button.getAttribute("scramble") === "scramble") {
+                    button.setAttribute("scramble", "unscramble");
                     button.innerHTML = "unscramble";
                 } else {
+                    button.setAttribute("scramble", "scramble");
                     button.innerHTML = "scramble";
                 }
 
@@ -88,17 +96,83 @@
                 stringUpdate();
             }
 
+            function allowMobileUpdate () {
+                if (document.getElementById("allowMobileCheckbox").checked) {
+                    localStorage.setItem("allowMobile", "true");
+                } else {
+                    localStorage.setItem("allowMobile", "false");
+                }
+                updateLayout();
+            }
+
+            //ASPECT RATIO = WIDTH / HEIGHT 
+
+            let previousAspectRatio = null
+
+            function isUpdateNeeded() {
+                const allowMobile = JSON.parse(localStorage.getItem("allowMobile"));
+
+                if (allowMobile && getAspectRatio() < ASPECT_RATIO_LIMIT && previousAspectRatio > ASPECT_RATIO_LIMIT) {
+                    updateLayout();
+                } else if (allowMobile && getAspectRatio() > ASPECT_RATIO_LIMIT && previousAspectRatio < ASPECT_RATIO_LIMIT) {
+                    updateLayout();
+                }
+
+                previousAspectRatio = getAspectRatio();
+            }
+
+            function updateLayout() {
+                let stringInput = document.getElementById("stringInput");
+                let stringOutput = document.getElementById("stringOutput");
+                let seedInput = document.getElementById("seedInput");
+                let scramblerToggle = document.getElementById("scramblerToggle");
+                let allowMobileCheckbox = document.getElementById("allowMobileCheckbox");
+
+                const inputText = stringInput.value;
+                const outputText = stringOutput.value;
+                const seed = seedInput.value;
+                const mode = scramblerToggle.getAttribute("scramble");
+
+                const allowMobile = JSON.parse(localStorage.getItem("allowMobile"));
+
+                if (allowMobile === false || getAspectRatio() > ASPECT_RATIO_LIMIT) {
+                    document.body.innerHTML = desktopHtml;
+                } else {
+                    document.body.innerHTML = mobileHtml;
+                }
+
+                stringInput = document.getElementById("stringInput");
+                stringOutput = document.getElementById("stringOutput");
+                seedInput = document.getElementById("seedInput");
+                scramblerToggle = document.getElementById("scramblerToggle");
+                allowMobileCheckbox = document.getElementById("allowMobileCheckbox");
+
+                stringInput.value = inputText;
+                stringOutput.value = outputText;
+                seedInput.value = seed;
+                scramblerToggle.setAttribute("scramble", mode);
+                allowMobileCheckbox.checked = allowMobile;
+
+                stringInput.addEventListener("input", stringUpdate);
+                stringInput.dispatchEvent(new Event('input', {bubbles: true}));
+
+                seedInput.addEventListener("input", stringUpdate);
+                scramblerToggle.addEventListener("click", swapScrambleButton);
+                allowMobileCheckbox.addEventListener("click", allowMobileUpdate);
+            }
+
             function stringUpdate() {
                 const stringInput = document.getElementById("stringInput");
                 const stringOutput = document.getElementById("stringOutput");
                 const seedInput = document.getElementById("seedInput");
 
-                stringInput.style.height = "auto";
+                stringInput.style.height = "15rem";
                 stringInput.style.height = `${stringInput.scrollHeight}px`;
+                stringOutput.style.height = `${stringInput.scrollHeight}px`;
 
                 if (!(seedInput.value.length > 0)) {
                     stringOutput.value = "Input a seed first!"
-                } else if (document.getElementById("scramblerToggle").innerHTML === "scramble") {
+                } else if (document.getElementById("scramblerToggle").getAttribute("scramble") === "scramble") {
                     stringOutput.value = scramble(stringInput.value, seedInput.value);
                 } else {
                     stringOutput.value = unscramble(stringInput.value, seedInput.value);
@@ -106,36 +180,119 @@
             }
 
             function init() {
-                document.getElementById("scramblerToggle").addEventListener("click", swapScrambleButton);
-                document.getElementById("stringInput").addEventListener("input", stringUpdate);
-                document.getElementById("seedInput").addEventListener("input", seedUpdate);
-                document.getElementById("randomizeSeed").addEventListener("click", randomizeSeed);
+                window.addEventListener("resize", isUpdateNeeded);
 
-                const stringInput = document.getElementById("stringInput");
-                stringInput.addEventListener("input", stringUpdate);
-                stringInput.dispatchEvent(new Event('input', {bubbles: true}));
+                document.body.innerHTML = desktopHtml;
+
+                updateLayout();
+
+                const allowMobile = JSON.parse(localStorage.getItem("allowMobile"));
+
+                if (typeof allowMobile !== "boolean") {
+                    console.log("allowMobile did not exist on startup!")
+                    localStorage.setItem("allowMobile", "true");
+                    allowMobileCheckbox.checked = true;
+                } else {
+                    console.log("allowMobile exists on startup! it was", allowMobile);
+                    allowMobileCheckbox.checked = allowMobile;
+                }
             }
 
             window.addEventListener("DOMContentLoaded", init);
         </script>
+
+        <!-- mobile layout and desktop layout -->
+        <script>
+            const desktopHtml = `
+                <div class="vertDiv" desktop>
+                    <h1 id="asdffd" style="color: #005cb3">Mevs awesome string scrambler</h1>
+                    <div class="horiDiv">
+                        <div class="horiDiv" style="gap: 0.2rem;">
+                            <label for="scramblerToggle">mode:</label>
+                            <button id="scramblerToggle" style="width: 9rem; font-size: 1.5rem;" scramble="scramble">scramble</button>
+                        </div>
+                        <div class="horiDiv" style="gap: 0.2rem;">
+                            <label for="seedInput">seed:</label>
+                            <input id="seedInput" style="font-size: 2rem;" type="number">
+                            <button id="randomizeSeed" style="width: 15rem;">randomize seed</button>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="horiDiv">
+                        <textarea id="stringInput" type="text"></textarea>
+                        <p style="font-family: sans-serif; font-size: 5rem; color: #005cb3;">==></p>
+                        <textarea id="stringOutput" type="text" disabled></textarea>
+                    </div>
+                    <hr>
+                    <div class="horiDiv">
+                        <label for="allowMobileCheckbox">allow mobile version?</label>
+                        <input id="allowMobileCheckbox" type="checkbox" style="width: 2rem; height: 2rem;">
+                    </div>
+                </div>
+            `
+
+            const mobileHtml = `
+                <div class="vertDiv">
+                    <h1 id="asdffd" style="color: #005cb3; width: fit-content;">Mevs awesome string scrambler</h1>
+
+                    <div class="horiDiv">
+                        <div class="horiDiv" style="gap: 0.2rem;">
+                            <label for="scramblerToggle">mode:</label>
+                            <button id="scramblerToggle" style="width: 9rem; font-size: 1.5rem;" scramble="scramble">scramble</button>
+                        </div>
+                        <button id="randomizeSeed" style="width: 15rem;">randomize seed</button>
+                    </div>
+
+                    <div class="horiDiv" style="gap: 0.2rem;">
+                        <label for="seedInput">seed:</label>
+                        <input id="seedInput" style="font-size: 2rem;" type="number">
+                    </div>
+
+                    <hr mobile>
+
+                    <textarea id="stringInput" type="text" mobile></textarea>
+                    <p style="font-family: sans-serif; font-size: 6rem; color: #005cb3; margin: 0%; width: fit-content;">↓</p>
+                    <textarea id="stringOutput" type="text" disabled mobile></textarea>
+
+                    <hr mobile>
+                    <div class="horiDiv">
+                        <label for="allowMobileCheckbox">allow mobile version?</label>
+                        <input id="allowMobileCheckbox" type="checkbox" style="width: 2rem; height: 2rem;">
+                    </div>
+                </div>
+            `
+        </script>
         <style>
             textarea {
-                height: auto; 
-                width: 40rem; 
-                resize: none; 
+                height: fit-content;
+                width: 40rem;
+                resize: none;
                 font-size: 2rem;
                 font-family: sans-serif;
+            }
+
+            textarea[mobile] {
+                width: 100%;
             }
 
             .horiDiv {
                 width: fit-content;
                 display: flex; 
                 flex-direction: row;
+                gap: 1rem;
             }
 
             .vertDiv {
                 display: flex; 
                 flex-direction: column;
+                align-items: center;
+                margin: auto;
+                width: auto;
+                gap: 1rem;
+            }
+
+            .vertDiv[desktop] {
+                min-width: 90rem;
             }
 
             label {
@@ -146,7 +303,11 @@
             hr {
                 border: 2px solid #005cb3;
                 border-radius: 5px;
-                width: 100%;;
+                width: 90rem;
+            }
+
+            hr[mobile] {
+                width: 100%;
             }
 
             button {
@@ -156,24 +317,4 @@
         </style>
     </head>
     <body>
-        <h1 id="asdffd" style="color: #005cb3">Mevs awesome string scrambler</h1>
-        <div class="vertDiv" style="gap: 1rem;">
-            <div class="horiDiv" style="gap: 1rem;">
-                <div class="horiDiv" style="gap: 0.2rem;">
-                    <label for="scramblerToggle">mode:</label>
-                    <button id="scramblerToggle" style="width: 9rem; font-size: 1.5rem;">scramble</button>
-                </div>
-                <div class="horiDiv" style="gap: 0.2rem;">
-                    <label for="seedInput">seed:</label>
-                    <input id="seedInput" style="font-size: 2rem;" type="number">
-                    <button id="randomizeSeed" style="width: 15rem;">randomize seed</button>
-                </div>
-            </div>
-            <hr>
-            <div class="horiDiv" style="gap: 1rem;">
-                <textarea id="stringInput" type="text"></textarea>
-                <p style="font-family: sans-serif; font-size: 5rem; color: #005cb3;">==></p>
-                <textarea id="stringOutput" type="text" disabled></textarea>
-            </div>
-        </div>
     </body>
