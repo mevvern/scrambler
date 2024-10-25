@@ -2,8 +2,6 @@
     <head>
         <title>Mevs Awesome String Scrambler</title>
         <script>
-            const ASPECT_RATIO_LIMIT = 1.16;
-
             function scramble(string, seed) {
                 const origArr = Array.from(string);
                 let newArr = [];
@@ -68,10 +66,6 @@
                 return Number(d) / 4294967296;
             }
 
-            function getAspectRatio() {
-                return window.innerWidth / window.innerHeight;
-            }
-
             function swapScrambleButton(event) {
                 const button = event.target;
                 if (button.getAttribute("scramble") === "scramble") {
@@ -96,29 +90,45 @@
                 stringUpdate();
             }
 
-            function allowMobileUpdate () {
-                if (document.getElementById("allowMobileCheckbox").checked) {
-                    localStorage.setItem("allowMobile", "true");
+            function forceMobileUpdate () {
+                if (document.getElementById("forceMobileCheckbox").checked) {
+                    localStorage.setItem("forceMobile", "true");
                 } else {
-                    localStorage.setItem("allowMobile", "false");
+                    localStorage.setItem("forceMobile", "false");
+                }
+
+                if (document.getElementById("forceDesktopCheckbox").checked) {
+                    document.getElementById("forceDesktopCheckbox").checked = false;
+                    localStorage.setItem("forceDesktop", false);
+                }
+
+                updateLayout();
+            }
+
+            function forceDesktopUpdate () {
+                if (document.getElementById("forceDesktopCheckbox").checked) {
+                    localStorage.setItem("forceDesktop", "true");
+                } else {
+                    localStorage.setItem("forceDesktop", "false");
+                }
+
+                if (document.getElementById("forceMobileCheckbox").checked) {
+                    document.getElementById("forceMobileCheckbox").checked = false;
+                    localStorage.setItem("forceMobile", false);
                 }
                 updateLayout();
             }
 
-            //ASPECT RATIO = WIDTH / HEIGHT 
-
-            let previousAspectRatio = null
+            const WIDTH_LIMIT = parseInt((window.getComputedStyle(document.querySelector("html")).getPropertyValue('font-size').slice(0, -2))) * 92;
+            let currentDocumentState = "desktop";
 
             function isUpdateNeeded() {
-                const allowMobile = JSON.parse(localStorage.getItem("allowMobile"));
+                isBelowLimitIllegally = window.innerWidth <= WIDTH_LIMIT && currentDocumentState === "desktop";
+                isAboveLimitIllegally = window.innerWidth > WIDTH_LIMIT && currentDocumentState === "mobile";
 
-                if (allowMobile && getAspectRatio() < ASPECT_RATIO_LIMIT && previousAspectRatio > ASPECT_RATIO_LIMIT) {
-                    updateLayout();
-                } else if (allowMobile && getAspectRatio() > ASPECT_RATIO_LIMIT && previousAspectRatio < ASPECT_RATIO_LIMIT) {
+                if (isBelowLimitIllegally || isAboveLimitIllegally) {
                     updateLayout();
                 }
-
-                previousAspectRatio = getAspectRatio();
             }
 
             function updateLayout() {
@@ -126,39 +136,54 @@
                 let stringOutput = document.getElementById("stringOutput");
                 let seedInput = document.getElementById("seedInput");
                 let scramblerToggle = document.getElementById("scramblerToggle");
-                let allowMobileCheckbox = document.getElementById("allowMobileCheckbox");
+                let forceDesktopCheckbox = document.getElementById("forceDesktopCheckbox");
+                let forceMobileCheckbox = document.getElementById("forceMobileCheckbox");
 
                 const inputText = stringInput.value;
                 const outputText = stringOutput.value;
                 const seed = seedInput.value;
                 const mode = scramblerToggle.getAttribute("scramble");
 
-                const allowMobile = JSON.parse(localStorage.getItem("allowMobile"));
+                const forceDesktop = JSON.parse(localStorage.getItem("forceDesktop"));
+                const forceMobile = JSON.parse(localStorage.getItem("forceMobile"));
 
-                if (allowMobile === false || getAspectRatio() > ASPECT_RATIO_LIMIT) {
+                if (window.innerWidth > WIDTH_LIMIT) {
                     document.body.innerHTML = desktopHtml;
+                    currentDocumentState = "desktop";
                 } else {
                     document.body.innerHTML = mobileHtml;
+                    currentDocumentState = "mobile";
+                }
+
+                if (forceDesktop === true) {
+                    document.body.innerHTML = desktopHtml;
+                    currentDocumentState = "desktop";
+                } else if (forceMobile === true) {
+                    document.body.innerHTML = mobileHtml;
+                    currentDocumentState = "mobile";
                 }
 
                 stringInput = document.getElementById("stringInput");
                 stringOutput = document.getElementById("stringOutput");
                 seedInput = document.getElementById("seedInput");
                 scramblerToggle = document.getElementById("scramblerToggle");
-                allowMobileCheckbox = document.getElementById("allowMobileCheckbox");
+                forceDesktopCheckbox = document.getElementById("forceDesktopCheckbox");
+                forceMobileCheckbox = document.getElementById("forceMobileCheckbox");
 
                 stringInput.value = inputText;
                 stringOutput.value = outputText;
                 seedInput.value = seed;
                 scramblerToggle.setAttribute("scramble", mode);
-                allowMobileCheckbox.checked = allowMobile;
+                forceDesktopCheckbox.checked = forceDesktop;
+                forceMobileCheckbox.checked = forceMobile;
 
                 stringInput.addEventListener("input", stringUpdate);
                 stringInput.dispatchEvent(new Event('input', {bubbles: true}));
 
                 seedInput.addEventListener("input", stringUpdate);
                 scramblerToggle.addEventListener("click", swapScrambleButton);
-                allowMobileCheckbox.addEventListener("click", allowMobileUpdate);
+                forceDesktopCheckbox.addEventListener("click", forceDesktopUpdate);
+                forceMobileCheckbox.addEventListener("click", forceMobileUpdate);
             }
 
             function stringUpdate() {
@@ -180,22 +205,27 @@
             }
 
             function init() {
+                const forceDesktop = JSON.parse(localStorage.getItem("forceDesktop"));
+                if (typeof forceDesktop !== "boolean") {
+                    console.log("forceDesktop did not exist on startup!")
+                    localStorage.setItem("forceDesktop", "true");
+                } else {
+                    console.log("forceDesktop exists on startup! it was", forceDesktop);
+                }
+
+                const forceMobile = JSON.parse(localStorage.getItem("forceMobile"));
+                if (typeof forceMobile !== "boolean") {
+                    console.log("forceMobile did not exist on startup!")
+                    localStorage.setItem("forceMobile", "false");
+                } else {
+                    console.log("forceMobile exists on startup! it was", forceMobile);
+                }
+
                 window.addEventListener("resize", isUpdateNeeded);
 
                 document.body.innerHTML = desktopHtml;
 
                 updateLayout();
-
-                const allowMobile = JSON.parse(localStorage.getItem("allowMobile"));
-
-                if (typeof allowMobile !== "boolean") {
-                    console.log("allowMobile did not exist on startup!")
-                    localStorage.setItem("allowMobile", "true");
-                    allowMobileCheckbox.checked = true;
-                } else {
-                    console.log("allowMobile exists on startup! it was", allowMobile);
-                    allowMobileCheckbox.checked = allowMobile;
-                }
             }
 
             window.addEventListener("DOMContentLoaded", init);
@@ -225,8 +255,12 @@
                     </div>
                     <hr>
                     <div class="horiDiv">
-                        <label for="allowMobileCheckbox">allow mobile version?</label>
-                        <input id="allowMobileCheckbox" type="checkbox" style="width: 2rem; height: 2rem;">
+                        <label for="forceDesktopCheckbox">force desktop version?</label>
+                        <input id="forceDesktopCheckbox" type="checkbox" style="width: 2rem; height: 2rem;">
+                    </div>
+                    <div class="horiDiv">
+                        <label for="forceMobileCheckbox">force mobile version?</label>
+                        <input id="forceMobileCheckbox" type="checkbox" style="width: 2rem; height: 2rem;">
                     </div>
                 </div>
             `
@@ -256,8 +290,12 @@
 
                     <hr mobile>
                     <div class="horiDiv">
-                        <label for="allowMobileCheckbox">allow mobile version?</label>
-                        <input id="allowMobileCheckbox" type="checkbox" style="width: 2rem; height: 2rem;">
+                        <label for="forceDesktopCheckbox">force desktop version?</label>
+                        <input id="forceDesktopCheckbox" type="checkbox" style="width: 2rem; height: 2rem;">
+                    </div>
+                    <div class="horiDiv">
+                        <label for="forceMobileCheckbox">force mobile version?</label>
+                        <input id="forceMobileCheckbox" type="checkbox" style="width: 2rem; height: 2rem;">
                     </div>
                 </div>
             `
